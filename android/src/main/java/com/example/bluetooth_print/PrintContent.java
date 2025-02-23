@@ -81,10 +81,8 @@ public class PrintContent {
 }
 
 
-      /**
-       * 标签打印对象转换
-       */
-      public static Vector<Byte> mapToLabel(Map<String,Object> config, List<Map<String,Object>> list) {
+
+public static Vector<Byte> mapToLabel(Map<String,Object> config, List<Map<String,Object>> list) {
     LabelCommand tsc = new LabelCommand();
 
     int width = (int)(config.get("width") == null ? 60 : config.get("width")); // mm
@@ -106,6 +104,8 @@ public class PrintContent {
         int x = (int)(m.get("x") == null ? 0 : m.get("x"));
         int y = (int)(m.get("y") == null ? 0 : m.get("y"));
 
+        System.out.println("🖨️ Type: " + type + ", X: " + x + ", Y: " + y);
+
         if ("text".equals(type)) {
             tsc.addText(x, y, LabelCommand.FONTTYPE.SIMPLIFIED_CHINESE, LabelCommand.ROTATION.ROTATION_0, LabelCommand.FONTMUL.MUL_1, LabelCommand.FONTMUL.MUL_1, content);
         } else if ("barcode".equals(type)) {
@@ -119,10 +119,9 @@ public class PrintContent {
             int imgWidth = (int)(m.get("width") == null ? bitmap.getWidth() : m.get("width"));
             int imgHeight = (int)(m.get("height") == null ? bitmap.getHeight() : m.get("height"));
 
-            // Resize the image
-            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, imgWidth, imgHeight, false);
+            System.out.println("🖼️ Image X: " + x + ", Y: " + y + ", Width: " + imgWidth + ", Height: " + imgHeight);
 
-            // Print image with correct dimensions
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, imgWidth, imgHeight, true);
             tsc.addBitmap(x, y, LabelCommand.BITMAP_MODE.OVERWRITE, imgWidth, resizedBitmap);
         }
     }
@@ -133,6 +132,7 @@ public class PrintContent {
 
     return tsc.getCommand();
 }
+
 
       /**
        * 面单打印对象转换
