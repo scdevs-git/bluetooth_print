@@ -120,63 +120,54 @@ public class PrintContent {
        * 标签打印对象转换
        */
       public static Vector<Byte> mapToLabel(Map<String,Object> config, List<Map<String,Object>> list) {
-            LabelCommand tsc = new LabelCommand();
+    LabelCommand tsc = new LabelCommand();
 
-            int width = (int)(config.get("width")==null?60:config.get("width")); // 单位：mm
-            int height = (int)(config.get("height")==null?75:config.get("height")); // 单位：mm
-            int gap = (int)(config.get("gap")==null?0:config.get("gap")); // 单位：mm
+    int width = (int)(config.get("width") == null ? 60 : config.get("width")); // mm
+    int height = (int)(config.get("height") == null ? 75 : config.get("height")); // mm
+    int gap = (int)(config.get("gap") == null ? 0 : config.get("gap")); // mm
 
-            // 设置标签尺寸宽高，按照实际尺寸设置 单位mm
-            tsc.addSize(width, height);
-            // 设置标签间隙，按照实际尺寸设置，如果为无间隙纸则设置为0 单位mm
-            tsc.addGap(gap);
-            // 设置打印方向
-            tsc.addDirection(LabelCommand.DIRECTION.FORWARD, LabelCommand.MIRROR.NORMAL);
-            // 开启带Response的打印，用于连续打印
-            tsc.addQueryPrinterStatus(LabelCommand.RESPONSE_MODE.ON);
-            // 设置原点坐标
-            tsc.addReference(0, 0);
-            //设置浓度
-            tsc.addDensity(LabelCommand.DENSITY.DNESITY4);
-            // 撕纸模式开启
-            tsc.addTear(EscCommand.ENABLE.ON);
-            // 清除打印缓冲区
-            tsc.addCls();
+    tsc.addSize(width, height);
+    tsc.addGap(gap);
+    tsc.addDirection(LabelCommand.DIRECTION.FORWARD, LabelCommand.MIRROR.NORMAL);
+    tsc.addQueryPrinterStatus(LabelCommand.RESPONSE_MODE.ON);
+    tsc.addReference(0, 0);
+    tsc.addDensity(LabelCommand.DENSITY.DNESITY4);
+    tsc.addTear(EscCommand.ENABLE.ON);
+    tsc.addCls();
 
-            // {type:'text|barcode|qrcode|image', content:'', x:0,y:0}
-            for (Map<String,Object> m: list) {
-                  String type = (String)m.get("type");
-                  String content = (String)m.get("content");
-                  int x = (int)(m.get("x")==null?0:m.get("x")); //dpi: 1mm约为8个点
-                  int y = (int)(m.get("y")==null?0:m.get("y"));
+    for (Map<String,Object> m : list) {
+        String type = (String) m.get("type");
+        String content = (String) m.get("content");
+        int x = (int)(m.get("x") == null ? 0 : m.get("x"));
+        int y = (int)(m.get("y") == null ? 0 : m.get("y"));
 
-                  if("text".equals(type)){
-                        // 绘制简体中文
-                        tsc.addText(x, y, LabelCommand.FONTTYPE.SIMPLIFIED_CHINESE, LabelCommand.ROTATION.ROTATION_0, LabelCommand.FONTMUL.MUL_1, LabelCommand.FONTMUL.MUL_1, content);
-                        //打印繁体
-                        //tsc.addUnicodeText(10,32, LabelCommand.FONTTYPE.TRADITIONAL_CHINESE, LabelCommand.ROTATION.ROTATION_0, LabelCommand.FONTMUL.MUL_1, LabelCommand.FONTMUL.MUL_1,"BIG5碼繁體中文字元","BIG5");
-                        //打印韩文
-                        //tsc.addUnicodeText(10,60, LabelCommand.FONTTYPE.KOREAN, LabelCommand.ROTATION.ROTATION_0, LabelCommand.FONTMUL.MUL_1, LabelCommand.FONTMUL.MUL_1,"Korean 지아보 하성","EUC_KR");
-                  }else if("barcode".equals(type)){
-                        tsc.add1DBarcode(x, y, LabelCommand.BARCODETYPE.CODE128, 100, LabelCommand.READABEL.EANBEL, LabelCommand.ROTATION.ROTATION_0, content);
-                  }else if("qrcode".equals(type)){
-                        tsc.addQRCode(x,y, LabelCommand.EEC.LEVEL_L, 5, LabelCommand.ROTATION.ROTATION_0, content);
-                  }else if("image".equals(type)){
-                        byte[] bytes = Base64.decode(content, Base64.DEFAULT);
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                        tsc.addBitmap(x, y, LabelCommand.BITMAP_MODE.OVERWRITE, 300, bitmap);
-                  }
-            }
+        if ("text".equals(type)) {
+            tsc.addText(x, y, LabelCommand.FONTTYPE.SIMPLIFIED_CHINESE, LabelCommand.ROTATION.ROTATION_0, LabelCommand.FONTMUL.MUL_1, LabelCommand.FONTMUL.MUL_1, content);
+        } else if ("barcode".equals(type)) {
+            tsc.add1DBarcode(x, y, LabelCommand.BARCODETYPE.CODE128, 100, LabelCommand.READABEL.EANBEL, LabelCommand.ROTATION.ROTATION_0, content);
+        } else if ("qrcode".equals(type)) {
+            tsc.addQRCode(x, y, LabelCommand.EEC.LEVEL_L, 5, LabelCommand.ROTATION.ROTATION_0, content);
+        } else if ("image".equals(type)) {
+            byte[] bytes = Base64.decode(content, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
-            // 打印标签
-            tsc.addPrint(1, 1);
-            // 打印标签后 蜂鸣器响
-            tsc.addSound(2, 100);
-            //开启钱箱
-            tsc.addCashdrwer(LabelCommand.FOOT.F5, 255, 255);
-            // 发送数据
-            return  tsc.getCommand();
-      }
+            int imgWidth = (int)(m.get("width") == null ? bitmap.getWidth() : m.get("width"));
+            int imgHeight = (int)(m.get("height") == null ? bitmap.getHeight() : m.get("height"));
+
+            // Resize the image
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, imgWidth, imgHeight, false);
+
+            // Print image with correct dimensions
+            tsc.addBitmap(x, y, LabelCommand.BITMAP_MODE.OVERWRITE, imgWidth, resizedBitmap);
+        }
+    }
+
+    tsc.addPrint(1, 1);
+    tsc.addSound(2, 100);
+    tsc.addCashdrwer(LabelCommand.FOOT.F5, 255, 255);
+
+    return tsc.getCommand();
+}
 
       /**
        * 面单打印对象转换
